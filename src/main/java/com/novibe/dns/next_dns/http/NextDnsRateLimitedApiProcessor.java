@@ -18,7 +18,8 @@ import static java.util.Optional.ofNullable;
 @UtilityClass
 public class NextDnsRateLimitedApiProcessor {
 
-
+    private static final long REQUEST_DELAY_MS = 1000; // 1 секунда между запросами
+    
     @SneakyThrows
     public <D, R extends NextDnsResponse<?>> void callApi(List<D> requestList, Function<D, R> request) {
         int waitSeconds = 60;
@@ -35,6 +36,12 @@ public class NextDnsRateLimitedApiProcessor {
                     Log.progress("Current success progress: " + ++successCounter + "/" + requestList.size());
                     waveCounter++;
                 }
+                
+                // Задержка между запросами, если очередь не пуста
+                if (!requestQueue.isEmpty()) {
+                    Thread.sleep(REQUEST_DELAY_MS);
+                }
+                
             } catch (NextDnsHttpError e) {
                 if (e.getCode() == 524 || e.getCode() == 429) {
                     requestQueue.add(requestDto);
