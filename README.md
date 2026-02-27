@@ -1,7 +1,9 @@
-🌐 Languages: [󠁧󠁢󠁥󠁮󠁧󠁿**English**](README.md) | [**Русский**](README.ru.md)
+Languages: [**English**](README.md) | [**Русский**](README.ru.md)
 
 # DNS Block&Redirect Configurer
 **Allows to set Redirect and Block rules to your Cloudflare and NextDNS accounts.**
+
+**Supports multiple accounts in a single pipeline** -- deploy to several NextDNS profiles and/or Cloudflare accounts at once using GitHub Environments.
 
 **Ready-to-run via GitHub Actions.** [Video guide](#step-by-step-video-guide-redirect-for-nextdns)
 
@@ -16,6 +18,8 @@
 [Setup data sources](#setup-data-sources)
 
 [GitHub Actions](#github-actions-setup)
+
+[Multi-account setup](#multi-account-setup)
 
 ## Cloudflare vs NextDNS
 
@@ -128,13 +132,86 @@ Previously generated data is removed **ONLY** when both `BLOCK` and `REDIRECT` s
 
 #### Step-by-step video guide: [REDIRECT for NextDNS](https://www.youtube.com/watch?v=vbAXM_xAL5I)
 
-#### Steps
+#### Steps (single account)
 
 1) Fork repository
 2) Go _Settings_ => _Environments_
-3) Create _New environment_ with name `DNS`
+3) Create _New environment_ with name `DNS_MAIN`
 4) Provide `AUTH_SECRET` and `CLIENT_ID` to **Environment secrets**
 5) Provide `DNS`,`REDIRECT` and `BLOCK` to **Environment variables**
 
 + The action will be launched every day at **01:30 UTC**. To set another time, change cron at `.github/workflows/github_action.yml`
 + You can run the action manually via `Run workflow` button: switch to _Actions_ tab and choose workflow named **DNS Block&Redirect Configurer cron task**
+
+---
+
+## Multi-account setup
+
+The workflow supports deploying to **multiple DNS accounts** (NextDNS and/or Cloudflare) in a single pipeline run. Each account is configured as a separate **GitHub Environment** with its own secrets and variables.
+
+### How it works
+
+The pipeline consists of two jobs:
+
+1. **`build`** -- builds the JAR artifact once
+2. **`deploy`** -- runs in parallel for each environment listed in the `matrix.environment` array. Each matrix entry uses its own GitHub Environment, which provides isolated secrets and variables.
+
+### Step-by-step guide
+
+#### 1) Create GitHub Environments
+
+Go to your repository _Settings_ => _Environments_ and create an environment for each DNS account. Recommended naming convention:
+
+| Environment name | Description |
+|---|---|
+| `DNS_MAIN` | Primary DNS profile (e.g. home network) |
+| `DNS_TV` | Smart TV profile |
+| `DNS_PS5` | PlayStation 5 profile |
+| `DNS_WORK` | Work devices profile |
+
+You can use any names you like -- just make sure they match the workflow matrix.
+
+#### 2) Configure each environment
+
+For **each** environment, set the following:
+
+**Environment secrets** (encrypted, not visible in logs):
+
+| Secret | Value |
+|---|---|
+| `AUTH_SECRET` | API token (Cloudflare) or API key (NextDNS) for this account |
+| `CLIENT_ID` | Account ID (Cloudflare) or Profile ID (NextDNS) for this account |
+
+**Environment variables** (plain text):
+
+| Variable | Value |
+|---|---|
+| `DNS` | `Cloudflare` or `NextDNS` |
+| `BLOCK` | Comma-separated URLs to hosts files for blocklists (optional) |
+| `REDIRECT` | Comma-separated URLs to hosts files for redirects (optional) |
+
+Each environment is completely independent -- you can mix Cloudflare and NextDNS accounts, use different block/redirect sources for each, etc.
+
+#### 3) Update the workflow matrix
+
+Edit `.github/workflows/github_action.yml` and list your environments in the `matrix.environment` array:
+
+```yaml
+strategy:
+  fail-fast: false
+  matrix:
+    environment:
+      - DNS_MAIN
+      - DNS_TV
+      - DNS_PS5
+```
+
+#### Example: 3 accounts with different providers
+
+| Environment | DNS | Description |
+|---|---|---|
+| `DNS_MAIN` | NextDNS | Home network, block + redirect |
+| `DNS_TV` | NextDNS | Smart TV, redirect only |
+| `DNS_PS5` | Cloudflare | PS5, block + redirect |
+
+Each environment has its own `CLIENT_ID`, `AUTH_SECRET`, `DNS`, `BLOCK`, `REDIRECT` values. The pipeline builds the JAR once, then deploys to all three accounts in parallel with `fail-fast: false` -- if one account fails, the others will still be processed.
