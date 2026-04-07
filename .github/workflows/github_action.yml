@@ -84,6 +84,16 @@ jobs:
       - name: Build custom hosts with cms/ams IPs
         if: ${{ env.CUSTOM_HOSTS_ENABLED == 'true' }}
         run: |
+          if [ -z "${CMS_IP// }" ]; then
+            echo "::error::CMS_IP is empty for environment ${{ matrix.environment }}"
+            exit 1
+          fi
+
+          if [ -z "${AMS_IP// }" ]; then
+            echo "::error::AMS_IP is empty for environment ${{ matrix.environment }}"
+            exit 1
+          fi
+
           OVERRIDES_ARG=""
           if [ -n "$CUSTOM_HOSTS_OVERRIDES_PATH" ]; then
             OVERRIDES_ARG="--overrides $CUSTOM_HOSTS_OVERRIDES_PATH"
