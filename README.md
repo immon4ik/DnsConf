@@ -81,6 +81,7 @@ To enable custom local hosts generation for a GitHub Environment, set:
 + `CMS_IP=<your cms ip>`
 + `AMS_IP=<your ams ip>`
 + `CUSTOM_HOSTS_OVERRIDES_PATH=config/custom-hosts-overrides.json` (optional)
++ `MALW_LINK_BLOCK_LIMIT=<number>` (optional, defaults to `0`)
 
 When `CUSTOM_HOSTS_ENABLED=false` or empty, the workflow uses `BLOCK` and `REDIRECT` exactly as provided in the environment.
 
@@ -91,6 +92,18 @@ When `CUSTOM_HOSTS_ENABLED=true`, the workflow:
 + preserves all block entries as block entries
 + replaces all redirect IPs with either `CMS_IP` or `AMS_IP`
 + overrides both `BLOCK` and `REDIRECT` so DnsConf reads only that local `file://...custom.hosts`
+
+By default `MALW_LINK_BLOCK_LIMIT=0`, so the block portion of `https://info.dns.malw.link/hosts` is fully disabled during merged hosts generation:
+
++ this source is by far the largest block contributor and adds tens of thousands of entries
++ leaving it untrimmed makes the final `hosts` file much larger and creates unnecessary Cloudflare / pipeline load
++ the redirect portion of that source is still preserved
+
+If you want to bring back part of its block entries, set `MALW_LINK_BLOCK_LIMIT` explicitly. Then:
+
++ only block entries from that source are capped
++ redirect entries from that source are preserved
++ the other upstream sources are left untouched
 
 If `CUSTOM_HOSTS_OVERRIDES_PATH` is set, the generator applies `force_nodes` from JSON first (`hostname -> cms|ams`) and uses deterministic hostname-hash split only as the fallback.
 

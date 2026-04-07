@@ -55,7 +55,6 @@ jobs:
       CMS_IP: ${{ vars.CMS_IP }}
       AMS_IP: ${{ vars.AMS_IP }}
       CUSTOM_HOSTS_OVERRIDES_PATH: ${{ vars.CUSTOM_HOSTS_OVERRIDES_PATH }}
-
       CLIENT_ID: ${{ secrets.CLIENT_ID }}
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
 
@@ -79,7 +78,14 @@ jobs:
       - name: Generate local hosts source
         if: ${{ env.CUSTOM_HOSTS_ENABLED == 'true' }}
         run: |
-          python3 scripts/generate_hosts_source.py --output "artefacts/${{ matrix.environment }}.hosts"
+          MALW_LIMIT_ARG=""
+          if [ -n "${{ vars.MALW_LINK_BLOCK_LIMIT }}" ]; then
+            MALW_LIMIT_ARG="--malw-link-block-limit ${{ vars.MALW_LINK_BLOCK_LIMIT }}"
+          fi
+
+          python3 scripts/generate_hosts_source.py \
+            ${MALW_LIMIT_ARG} \
+            --output "artefacts/${{ matrix.environment }}.hosts"
 
       - name: Build custom hosts with cms/ams IPs
         if: ${{ env.CUSTOM_HOSTS_ENABLED == 'true' }}

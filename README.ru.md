@@ -96,6 +96,7 @@ https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/refs/heads/main/hos
 + `CMS_IP=<ip вашего cms>`
 + `AMS_IP=<ip вашего ams>`
 + `CUSTOM_HOSTS_OVERRIDES_PATH=config/custom-hosts-overrides.json` (необязательно)
++ `MALW_LINK_BLOCK_LIMIT=<число>` (необязательно, по умолчанию `0`)
 
 Если `CUSTOM_HOSTS_ENABLED=false` или переменная не задана, workflow использует `BLOCK` и `REDIRECT` как они заданы в environment.
 
@@ -106,6 +107,18 @@ https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/refs/heads/main/hos
 + сохраняет все block-записи как block-записи
 + заменяет все redirect-IP на `CMS_IP` или `AMS_IP`
 + полностью подменяет и `BLOCK`, и `REDIRECT`, чтобы `DnsConf` читал только локальный `file://...custom.hosts`
+
+По умолчанию `MALW_LINK_BLOCK_LIMIT=0`, поэтому на этапе сборки merged `hosts` block-часть источника `https://info.dns.malw.link/hosts` полностью отключена:
+
++ это самый большой источник block-записей и он даёт десятки тысяч записей
++ без подрезки он сильно раздувает итоговый `hosts` и создаёт лишнюю нагрузку на Cloudflare / pipeline
++ при этом redirect-часть этого источника остаётся включённой
+
+Если вы хотите вернуть часть block-записей из этого источника, задайте `MALW_LINK_BLOCK_LIMIT` явно. Тогда:
+
++ ограничиваются только block-записи из этого источника
++ redirect-записи из него не режутся
++ остальные upstream-источники не затрагиваются
 
 Если задан `CUSTOM_HOSTS_OVERRIDES_PATH`, генератор сначала применяет `force_nodes` из JSON (`hostname -> cms|ams`), а для остальных доменов использует детерминированный split по хэшу hostname.
 
