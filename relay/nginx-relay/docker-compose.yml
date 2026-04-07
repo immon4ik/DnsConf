@@ -1,0 +1,10 @@
+services:
+  nginx-relay:
+    image: nginx:1.27-alpine
+    container_name: ${CONTAINER_NAME:-dns-relay}
+    restart: unless-stopped
+    ports:
+      - ${HOST_BIND:-0.0.0.0}:${HOST_PORT:-443}:443/tcp
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./logs:/var/log/nginx

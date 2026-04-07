@@ -83,6 +83,43 @@ https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/refs/heads/main/hos
 Можно указать несколько источников, разделив их запятой:
 `https://first.com/hosts,https://second.com/hosts`
 
+Также workflow умеет перед запуском JAR собирать локальный объединённый `hosts` из этих апстримов:
+
++ `https://dns.geohide.ru:8443`
++ `https://info.dns.malw.link/hosts`
++ `https://iplist.opencck.org/ru`
++ `https://freedom.mafioznik.xyz/file/hosts`
+
+Чтобы включить локальное формирование кастомного `hosts` для GitHub Environment, задайте:
+
++ `CUSTOM_HOSTS_ENABLED=true`
++ `CMS_IP=<ip вашего cms>`
++ `AMS_IP=<ip вашего ams>`
++ `CUSTOM_HOSTS_OVERRIDES_PATH=config/custom-hosts-overrides.json` (необязательно)
+
+Если `CUSTOM_HOSTS_ENABLED=false` или переменная не задана, workflow использует `BLOCK` и `REDIRECT` как они заданы в environment.
+
+Если `CUSTOM_HOSTS_ENABLED=true`, workflow:
+
++ собирает `artefacts/<environment>.hosts` из четырёх upstream-источников выше
++ собирает `artefacts/<environment>.custom.hosts`
++ сохраняет все block-записи как block-записи
++ заменяет все redirect-IP на `CMS_IP` или `AMS_IP`
++ полностью подменяет и `BLOCK`, и `REDIRECT`, чтобы `DnsConf` читал только локальный `file://...custom.hosts`
+
+Если задан `CUSTOM_HOSTS_OVERRIDES_PATH`, генератор сначала применяет `force_nodes` из JSON (`hostname -> cms|ams`), а для остальных доменов использует детерминированный split по хэшу hostname.
+
+Пример файла overrides:
+
+```json
+{
+  "force_nodes": {
+    "instagram.com": "ams",
+    "www.instagram.com": "ams"
+  }
+}
+```
+
 ---
 
 ### 1) Настройка перенаправлений (редиректы)
@@ -222,6 +259,9 @@ https://www.youtube.com/watch?v=vbAXM_xAL5I
 | `DNS` | `Cloudflare` или `NextDNS` |
 | `BLOCK` | URL-адреса hosts-файлов для блокировки через запятую (необязательно) |
 | `REDIRECT` | URL-адреса hosts-файлов для редиректов через запятую (необязательно) |
+| `CUSTOM_HOSTS_ENABLED` | `true`, чтобы игнорировать внешние `BLOCK` / `REDIRECT` и использовать локально собранный custom hosts (необязательно) |
+| `CMS_IP` | IP для части redirect-доменов в custom hosts режиме |
+| `AMS_IP` | IP для оставшейся части redirect-доменов в custom hosts режиме |
 
 Каждое окружение полностью независимо — можно комбинировать аккаунты Cloudflare и NextDNS, использовать разные источники блокировок/редиректов для каждого и т.д.
 

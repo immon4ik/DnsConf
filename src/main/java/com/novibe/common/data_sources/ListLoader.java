@@ -11,6 +11,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -48,7 +50,11 @@ public abstract class ListLoader<T> {
     @SneakyThrows
     private String fetchList(String url) {
         Log.io("Loading %s list from url: %s".formatted(listType(), url));
-        HttpRequest request = HttpRequest.newBuilder(URI.create(url))
+        URI uri = URI.create(url);
+        if ("file".equalsIgnoreCase(uri.getScheme())) {
+            return Files.readString(Path.of(uri), StandardCharsets.UTF_8);
+        }
+        HttpRequest request = HttpRequest.newBuilder(uri)
                 .GET()
                 .build();
         return client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8)).body();

@@ -51,6 +51,10 @@ jobs:
       DNS: ${{ vars.DNS }}
       BLOCK: ${{ vars.BLOCK }}
       REDIRECT: ${{ vars.REDIRECT }}
+      CUSTOM_HOSTS_ENABLED: ${{ vars.CUSTOM_HOSTS_ENABLED }}
+      CMS_IP: ${{ vars.CMS_IP }}
+      AMS_IP: ${{ vars.AMS_IP }}
+      CUSTOM_HOSTS_OVERRIDES_PATH: ${{ vars.CUSTOM_HOSTS_OVERRIDES_PATH }}
 
       CLIENT_ID: ${{ secrets.CLIENT_ID }}
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
@@ -58,6 +62,9 @@ jobs:
       TZ: Europe/Moscow
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
@@ -68,6 +75,45 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: dns-configurer
+
+      - name: Generate local hosts source
+        if: ${{ env.CUSTOM_HOSTS_ENABLED == 'true' }}
+        run: |
+          python3 scripts/generate_hosts_source.py --output "artefacts/${{ matrix.environment }}.hosts"
+
+      - name: Build custom hosts with cms/ams IPs
+        if: ${{ env.CUSTOM_HOSTS_ENABLED == 'true' }}
+        run: |
+          OVERRIDES_ARG=""
+          if [ -n "$CUSTOM_HOSTS_OVERRIDES_PATH" ]; then
+            OVERRIDES_ARG="--overrides $CUSTOM_HOSTS_OVERRIDES_PATH"
+          elif [ -f "config/custom-hosts-overrides.json" ]; then
+            OVERRIDES_ARG="--overrides config/custom-hosts-overrides.json"
+          fi
+
+          python3 scripts/generate_custom_hosts.py \
+            --input "artefacts/${{ matrix.environment }}.hosts" \
+            --cms-ip "$CMS_IP" \
+            --ams-ip "$AMS_IP" \
+            ${OVERRIDES_ARG} \
+            --output "artefacts/${{ matrix.environment }}.custom.hosts"
+
+      - name: Override BLOCK and REDIRECT with custom hosts
+        if: ${{ env.CUSTOM_HOSTS_ENABLED == 'true' }}
+        run: |
+          CUSTOM_HOSTS_URL="file://${GITHUB_WORKSPACE}/artefacts/${{ matrix.environment }}.custom.hosts"
+          echo "BLOCK=${CUSTOM_HOSTS_URL}" >> "$GITHUB_ENV"
+          echo "REDIRECT=${CUSTOM_HOSTS_URL}" >> "$GITHUB_ENV"
+
+      - name: Upload custom hosts artifact
+        if: ${{ env.CUSTOM_HOSTS_ENABLED == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: custom-hosts-${{ matrix.environment }}
+          path: |
+            artefacts/${{ matrix.environment }}.hosts
+            artefacts/${{ matrix.environment }}.custom.hosts
+          retention-days: 7
 
       - name: Run application [${{ matrix.environment }}]
         run: |

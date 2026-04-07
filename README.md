@@ -68,6 +68,43 @@ Each data source must be a link to a hosts file, e.g. https://raw.githubusercont
 You can provide multiple sources split by coma:
 https://first.com/hosts,https://second.com/hosts
 
+The workflow can also build a local merged hosts source from these upstreams before running the JAR:
+
++ `https://dns.geohide.ru:8443`
++ `https://info.dns.malw.link/hosts`
++ `https://iplist.opencck.org/ru`
++ `https://freedom.mafioznik.xyz/file/hosts`
+
+To enable custom local hosts generation for a GitHub Environment, set:
+
++ `CUSTOM_HOSTS_ENABLED=true`
++ `CMS_IP=<your cms ip>`
++ `AMS_IP=<your ams ip>`
++ `CUSTOM_HOSTS_OVERRIDES_PATH=config/custom-hosts-overrides.json` (optional)
+
+When `CUSTOM_HOSTS_ENABLED=false` or empty, the workflow uses `BLOCK` and `REDIRECT` exactly as provided in the environment.
+
+When `CUSTOM_HOSTS_ENABLED=true`, the workflow:
+
++ builds `artefacts/<environment>.hosts` from the 4 upstream sources above
++ builds `artefacts/<environment>.custom.hosts`
++ preserves all block entries as block entries
++ replaces all redirect IPs with either `CMS_IP` or `AMS_IP`
++ overrides both `BLOCK` and `REDIRECT` so DnsConf reads only that local `file://...custom.hosts`
+
+If `CUSTOM_HOSTS_OVERRIDES_PATH` is set, the generator applies `force_nodes` from JSON first (`hostname -> cms|ams`) and uses deterministic hostname-hash split only as the fallback.
+
+Overrides example:
+
+```json
+{
+  "force_nodes": {
+    "instagram.com": "ams",
+    "www.instagram.com": "ams"
+  }
+}
+```
+
 ### 1) Setup Redirects
 Set sources to **environment variable** `REDIRECT`
 
@@ -189,6 +226,9 @@ For **each** environment, set the following:
 | `DNS` | `Cloudflare` or `NextDNS` |
 | `BLOCK` | Comma-separated URLs to hosts files for blocklists (optional) |
 | `REDIRECT` | Comma-separated URLs to hosts files for redirects (optional) |
+| `CUSTOM_HOSTS_ENABLED` | `true` to ignore external `BLOCK` / `REDIRECT` sources and use a locally built custom hosts file instead (optional) |
+| `CMS_IP` | Replacement IP for part of redirect domains in custom hosts mode |
+| `AMS_IP` | Replacement IP for the rest of redirect domains in custom hosts mode |
 
 Each environment is completely independent -- you can mix Cloudflare and NextDNS accounts, use different block/redirect sources for each, etc.
 
