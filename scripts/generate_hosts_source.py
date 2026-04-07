@@ -18,6 +18,9 @@ DEFAULT_SOURCES = [
     "https://freedom.mafioznik.xyz/file/hosts",
 ]
 
+MALW_LINK_SOURCE_URL = "https://info.dns.malw.link/hosts"
+DEFAULT_MALW_LINK_BLOCK_LIMIT = 0
+
 BLOCK_PREFIXES = {"0.0.0.0", "127.0.0.1", "::1"}
 RAW_HOSTS_URL_RE = re.compile(r"https://raw\.githubusercontent\.com/[^\s\"'<>]+/hosts")
 HOSTNAME_RE = re.compile(
@@ -33,6 +36,15 @@ def parse_args() -> argparse.Namespace:
         action="append",
         dest="sources",
         help="Hosts source URL. Can be repeated. Defaults to the built-in source list.",
+    )
+    parser.add_argument(
+        "--malw-link-block-limit",
+        type=int,
+        default=DEFAULT_MALW_LINK_BLOCK_LIMIT,
+        help=(
+            "Cap for block entries from info.dns.malw.link/hosts. "
+            "Redirect entries stay untouched. Defaults to 0."
+        ),
     )
     return parser.parse_args()
 
@@ -88,6 +100,35 @@ def normalize_line(line: str) -> str | None:
     return f"{ip} {host}"
 
 
+def trim_source_records(source: str, records: list[str], malw_link_block_limit: int | None) -> list[str]:
+    if source != MALW_LINK_SOURCE_URL:
+        return records
+
+    if malw_link_block_limit < 0:
+        raise ValueError("--malw-link-block-limit must be greater than or equal to 0")
+
+    trimmed: list[str] = []
+    kept_blocks = 0
+    skipped_blocks = 0
+
+    for record in records:
+        if record.startswith("0.0.0.0 "):
+            if kept_blocks >= malw_link_block_limit:
+                skipped_blocks += 1
+                continue
+            kept_blocks += 1
+
+        trimmed.append(record)
+
+    if skipped_blocks > 0:
+        print(
+            f"Trimmed {skipped_blocks} block entries from {source}; "
+            f"kept {kept_blocks} block entries"
+        )
+
+    return trimmed
+
+
 def main() -> int:
     args = parse_args()
     sources = args.sources or DEFAULT_SOURCES
@@ -105,10 +146,23 @@ def main() -> int:
             print(f"Failed to load {source}: {exc}", file=sys.stderr)
             return 1
 
+        source_records: list[str] = []
+        source_seen: set[str] = set()
+
         for raw_line in content.splitlines():
             normalized = normalize_line(raw_line)
-            if normalized is None or normalized in seen:
+            if normalized is None or normalized in source_seen:
                 continue
+
+            source_seen.add(normalized)
+            source_records.append(normalized)
+
+        source_records = trim_source_records(source, source_records, args.malw_link_block_limit)
+
+        for normalized in source_records:
+            if normalized in seen:
+                continue
+
             seen.add(normalized)
             merged.append(normalized)
 
