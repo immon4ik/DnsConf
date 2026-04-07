@@ -78,7 +78,7 @@ The workflow can also build a local merged hosts source from these upstreams bef
 To enable custom local hosts generation for a GitHub Environment, set:
 
 + `CUSTOM_HOSTS_ENABLED=true`
-+ `CMS_IP=<your cms ip>`
++ `PMS_IP=<your pms ip>`
 + `AMS_IP=<your ams ip>`
 + `CUSTOM_HOSTS_OVERRIDES_PATH=config/custom-hosts-overrides.json` (optional)
 + `MALW_LINK_BLOCK_LIMIT=<number>` (optional, defaults to `0`)
@@ -90,7 +90,7 @@ When `CUSTOM_HOSTS_ENABLED=true`, the workflow:
 + builds `artefacts/<environment>.hosts` from the 4 upstream sources above
 + builds `artefacts/<environment>.custom.hosts`
 + preserves all block entries as block entries
-+ replaces all redirect IPs with either `CMS_IP` or `AMS_IP`
++ replaces all redirect IPs with either `PMS_IP` or `AMS_IP`
 + overrides both `BLOCK` and `REDIRECT` so DnsConf reads only that local `file://...custom.hosts`
 
 By default `MALW_LINK_BLOCK_LIMIT=0`, so the block portion of `https://info.dns.malw.link/hosts` is fully disabled during merged hosts generation:
@@ -105,7 +105,7 @@ If you want to bring back part of its block entries, set `MALW_LINK_BLOCK_LIMIT`
 + redirect entries from that source are preserved
 + the other upstream sources are left untouched
 
-If `CUSTOM_HOSTS_OVERRIDES_PATH` is set, the generator applies `force_nodes` from JSON first (`hostname -> cms|ams`) and uses deterministic hostname-hash split only as the fallback.
+If `CUSTOM_HOSTS_OVERRIDES_PATH` is set, the generator applies `force_nodes` from JSON first (`hostname -> pms|ams`) and uses deterministic hostname-hash split only as the fallback.
 
 Overrides example:
 
@@ -240,7 +240,7 @@ For **each** environment, set the following:
 | `BLOCK` | Comma-separated URLs to hosts files for blocklists (optional) |
 | `REDIRECT` | Comma-separated URLs to hosts files for redirects (optional) |
 | `CUSTOM_HOSTS_ENABLED` | `true` to ignore external `BLOCK` / `REDIRECT` sources and use a locally built custom hosts file instead (optional) |
-| `CMS_IP` | Replacement IP for part of redirect domains in custom hosts mode |
+| `PMS_IP` | Replacement IP for part of redirect domains in custom hosts mode |
 | `AMS_IP` | Replacement IP for the rest of redirect domains in custom hosts mode |
 
 Each environment is completely independent -- you can mix Cloudflare and NextDNS accounts, use different block/redirect sources for each, etc.

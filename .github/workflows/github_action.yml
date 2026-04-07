@@ -52,7 +52,7 @@ jobs:
       BLOCK: ${{ vars.BLOCK }}
       REDIRECT: ${{ vars.REDIRECT }}
       CUSTOM_HOSTS_ENABLED: ${{ vars.CUSTOM_HOSTS_ENABLED }}
-      CMS_IP: ${{ vars.CMS_IP }}
+      PMS_IP: ${{ vars.PMS_IP }}
       AMS_IP: ${{ vars.AMS_IP }}
       CUSTOM_HOSTS_OVERRIDES_PATH: ${{ vars.CUSTOM_HOSTS_OVERRIDES_PATH }}
       CLIENT_ID: ${{ secrets.CLIENT_ID }}
@@ -87,11 +87,11 @@ jobs:
             ${MALW_LIMIT_ARG} \
             --output "artefacts/${{ matrix.environment }}.hosts"
 
-      - name: Build custom hosts with cms/ams IPs
+      - name: Build custom hosts with pms/ams IPs
         if: ${{ env.CUSTOM_HOSTS_ENABLED == 'true' }}
         run: |
-          if [ -z "${CMS_IP// }" ]; then
-            echo "::error::CMS_IP is empty for environment ${{ matrix.environment }}"
+          if [ -z "${PMS_IP// }" ]; then
+            echo "::error::PMS_IP is empty for environment ${{ matrix.environment }}"
             exit 1
           fi
 
@@ -109,7 +109,7 @@ jobs:
 
           python3 scripts/generate_custom_hosts.py \
             --input "artefacts/${{ matrix.environment }}.hosts" \
-            --cms-ip "$CMS_IP" \
+            --pms-ip "$PMS_IP" \
             --ams-ip "$AMS_IP" \
             ${OVERRIDES_ARG} \
             --output "artefacts/${{ matrix.environment }}.custom.hosts"
