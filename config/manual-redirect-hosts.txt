@@ -1,0 +1,3 @@
+# Manually maintained redirect domains that must be preserved in generated custom hosts.
+# IP values here are placeholders and will be remapped to PMS_IP or AMS_IP by generate_custom_hosts.py.
+203.0.113.10 anchor.immon4ik.pro
