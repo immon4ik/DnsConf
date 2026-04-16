@@ -1,5 +1,6 @@
 package com.novibe.common.data_sources;
 
+import com.novibe.common.util.Log;
 import org.springframework.stereotype.Service;
 
 import java.util.regex.Pattern;
@@ -19,7 +20,7 @@ public class HostsOverrideListsLoader extends ListLoader<HostsOverrideListsLoade
                 .filter(str -> !str.isBlank())
                 .filter(line -> !line.startsWith("#"))
                 .filter(line -> !HostsBlockListsLoader.isBlock(line))
-                .map(this::mapLine);
+                .flatMap(this::mapLine);
     }
 
     @Override
@@ -27,11 +28,13 @@ public class HostsOverrideListsLoader extends ListLoader<HostsOverrideListsLoade
         return "Override";
     }
 
-    private BypassRoute mapLine(String line) {
-        int delimiter = line.indexOf(" ");
-        String ip = line.substring(0, delimiter++);
-        String website = line.substring(delimiter);
-        return new BypassRoute(ip, website);
+    private Stream<BypassRoute> mapLine(String line) {
+        String[] parts = line.split("\\s+", 2);
+        if (parts.length < 2 || parts[1].isBlank()) {
+            Log.io("Skipping malformed override line: " + line);
+            return Stream.empty();
+        }
+        return Stream.of(new BypassRoute(parts[0], parts[1]));
     }
 
 }
