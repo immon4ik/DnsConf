@@ -93,6 +93,8 @@ When `CUSTOM_HOSTS_ENABLED=true`, the workflow:
 + replaces all redirect IPs with either `PMS_IP` or `AMS_IP`
 + overrides both `BLOCK` and `REDIRECT` so DnsConf reads only that local `file://...custom.hosts`
 
+If `config/manual-redirect-hosts.txt` exists, its redirect records are appended to `artefacts/<environment>.hosts` before remapping. This is the right place for manually maintained domains that must survive future regenerations.
+
 By default `MALW_LINK_BLOCK_LIMIT=0`, so the block portion of `https://info.dns.malw.link/hosts` is fully disabled during merged hosts generation:
 
 + this source is by far the largest block contributor and adds tens of thousands of entries
@@ -112,6 +114,7 @@ Overrides example:
 ```json
 {
   "force_nodes": {
+    "anchor.immon4ik.pro": "pms",
     "instagram.com": "ams",
     "www.instagram.com": "ams"
   }

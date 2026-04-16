@@ -108,6 +108,8 @@ https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/refs/heads/main/hos
 + заменяет все redirect-IP на `PMS_IP` или `AMS_IP`
 + полностью подменяет и `BLOCK`, и `REDIRECT`, чтобы `DnsConf` читал только локальный `file://...custom.hosts`
 
+Если существует `config/manual-redirect-hosts.txt`, его redirect-записи добавляются в `artefacts/<environment>.hosts` до этапа remap. Это правильное место для вручную поддерживаемых доменов, которые должны переживать последующие регенерации.
+
 По умолчанию `MALW_LINK_BLOCK_LIMIT=0`, поэтому на этапе сборки merged `hosts` block-часть источника `https://info.dns.malw.link/hosts` полностью отключена:
 
 + это самый большой источник block-записей и он даёт десятки тысяч записей
@@ -127,6 +129,7 @@ https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/refs/heads/main/hos
 ```json
 {
   "force_nodes": {
+    "anchor.immon4ik.pro": "pms",
     "instagram.com": "ams",
     "www.instagram.com": "ams"
   }

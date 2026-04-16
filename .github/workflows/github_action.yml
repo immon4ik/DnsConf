@@ -87,6 +87,10 @@ jobs:
             ${MALW_LIMIT_ARG} \
             --output "artefacts/${{ matrix.environment }}.hosts"
 
+          if [ -f "config/manual-redirect-hosts.txt" ]; then
+            cat "config/manual-redirect-hosts.txt" >> "artefacts/${{ matrix.environment }}.hosts"
+          fi
+
       - name: Build custom hosts with pms/ams IPs
         if: ${{ env.CUSTOM_HOSTS_ENABLED == 'true' }}
         run: |
