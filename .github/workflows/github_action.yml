@@ -88,10 +88,7 @@ jobs:
             --output "artefacts/${{ matrix.environment }}.hosts"
 
           if [ -f "config/manual-redirect-hosts.txt" ]; then
-            tmp="$(mktemp)"
-            cat "config/manual-redirect-hosts.txt" > "$tmp"
-            cat "artefacts/${{ matrix.environment }}.hosts" >> "$tmp"
-            mv "$tmp" "artefacts/${{ matrix.environment }}.hosts"
+            cat "config/manual-redirect-hosts.txt" >> "artefacts/${{ matrix.environment }}.hosts"
           fi
 
       - name: Build custom hosts with pms/ams IPs
