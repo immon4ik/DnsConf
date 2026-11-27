@@ -142,9 +142,9 @@ def main() -> int:
         print(f"Loading source: {source}")
         try:
             resolved_source, content = resolve_hosts_content(source)
-        except urllib.error.URLError as exc:
+        except Exception as exc:  # noqa: BLE001 - one flaky source must not fail the build
             print(f"Failed to load {source}: {exc}", file=sys.stderr)
-            return 1
+            continue
 
         source_records: list[str] = []
         source_seen: set[str] = set()
