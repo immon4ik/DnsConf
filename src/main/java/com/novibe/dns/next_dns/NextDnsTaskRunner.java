@@ -58,7 +58,7 @@ public class NextDnsTaskRunner implements DnsTaskRunner {
             Log.step("Reset rewrites (full mirror)");
             nextDnsRewriteService.removeAll();
             Map<String, CreateRewriteDto> requests = nextDnsRewriteService.buildNewRewrites(overrides);
-            List<CreateRewriteDto> createRewriteDtos = List.copyOf(requests.values());
+            List<CreateRewriteDto> createRewriteDtos = requests.values().stream().limit(500).toList();
             Log.common("Prepared %s domains to rewrite".formatted(requests.size()));
 
             Log.step("Save rewrites");
