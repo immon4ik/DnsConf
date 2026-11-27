@@ -16,6 +16,7 @@ DEFAULT_SOURCES = [
     "https://info.dns.malw.link/hosts",
     "https://iplist.opencck.org/ru",
     "https://freedom.mafioznik.xyz/file/hosts",
+    "https://raw.githubusercontent.com/Internet-Helper/GeoHideDNS/refs/heads/main/hosts/hosts",
 ]
 
 MALW_LINK_SOURCE_URL = "https://info.dns.malw.link/hosts"
