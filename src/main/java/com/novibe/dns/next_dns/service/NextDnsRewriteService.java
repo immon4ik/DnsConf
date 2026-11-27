@@ -37,7 +37,11 @@ public class NextDnsRewriteService {
             String domain = existingRewrite.name();
             String oldIp = existingRewrite.content();
             CreateRewriteDto request = newRewriteRequests.get(domain);
-            if (nonNull(request) && !request.getContent().equals(oldIp)) {
+            if (request == null) {
+                // Domain no longer in the source list: drop it so the profile
+                // stays a full mirror and never accumulates past the 500 limit.
+                outdatedIds.add(existingRewrite.id());
+            } else if (!request.getContent().equals(oldIp)) {
                 outdatedIds.add(existingRewrite.id());
             } else {
                 newRewriteRequests.remove(domain);
