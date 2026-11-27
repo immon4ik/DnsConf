@@ -55,10 +55,10 @@ public class NextDnsTaskRunner implements DnsTaskRunner {
             Log.step("Obtain rewrite lists from %s sources".formatted(blockSources.size()));
             List<HostsOverrideListsLoader.BypassRoute> overrides = overrideListsLoader.fetchWebsites(rewriteSources);
 
-            Log.step("Reset rewrites (full mirror)");
-            nextDnsRewriteService.removeAll();
-            Map<String, CreateRewriteDto> requests = nextDnsRewriteService.buildNewRewrites(overrides);
-            List<CreateRewriteDto> createRewriteDtos = requests.values().stream().limit(500).toList();
+            Log.step("Prepare rewrites (diff, max 500)");
+            List<HostsOverrideListsLoader.BypassRoute> cappedOverrides = overrides.stream().limit(500).toList();
+            Map<String, CreateRewriteDto> requests = nextDnsRewriteService.buildNewRewrites(cappedOverrides);
+            List<CreateRewriteDto> createRewriteDtos = nextDnsRewriteService.cleanupOutdated(requests);
             Log.common("Prepared %s domains to rewrite".formatted(requests.size()));
 
             Log.step("Save rewrites");
