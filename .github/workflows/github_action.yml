@@ -136,12 +136,17 @@ jobs:
           retention-days: 7
 
       - name: Cap rewrites to NextDNS limit (500)
-        if: ${{ startsWith(matrix.environment, 'DNS_ND') }}
         run: |
+          case "${{ matrix.environment }}" in
+            DNS_ND_*) ;;
+            *) echo "Not a NextDNS env, skipping cap"; exit 0 ;;
+          esac
           for f in "artefacts/${{ matrix.environment }}.custom.hosts" "artefacts/${{ matrix.environment }}.hosts"; do
             [ -f "$f" ] || continue
+            before=$(grep -vc '^[[:space:]]*#' "$f" || true)
             awk 'BEGIN{keep=0} /^[[:space:]]*#/{print; next} {if(keep<500){print; keep++}}' "$f" > "$f.capped" && mv "$f.capped" "$f"
-            echo "Capped $f to 500 records"
+            after=$(grep -vc '^[[:space:]]*#' "$f" || true)
+            echo "Capped $f: $before -> $after records"
           done
 
       - name: Run application [${{ matrix.environment }}]
